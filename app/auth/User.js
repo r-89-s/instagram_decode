@@ -35,6 +35,8 @@ const User = sequelize.define('User', {
         type: DataTypes.STRING,
         allowNull: true,
     },
+},{
+    timestamps: false, // Отключаем поля createdAt и updatedAt
 })
 
 module.exports = User
