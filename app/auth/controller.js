@@ -1,5 +1,7 @@
 const User = require('./User')
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken')
+const {jwtOptions} = require('./passport')
 
 const saltRounds = 10;
 
@@ -17,29 +19,30 @@ const signUp = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, saltRounds);
 
         // Создаем нового пользователя в базе данных с хэшированным паролем
-        const newUser = await User.create({
-            email,
-            password: hashedPassword, // сохраняем хэшированный пароль
-            phone,
-            full_name,
-            username,
-            bio,
-            profile_picture,
-        });
+        let newUser = await User.findOne({where: {email: req.body.email}})
+        if(!newUser){
+            newUser = await User.create({
+                email,
+                password: hashedPassword, // сохраняем хэшированный пароль
+                phone,
+                full_name,
+                username,
+                bio,
+                profile_picture,
+            });
+        }
+        
+        //Создаем новый токен для пользователя
+        const token = jwt.sign({
+            id: newUser.id,
+            email: newUser.email,
+            phone: newUser.phone,
+            username: newUser.username
+        }, jwtOptions.secretOrKey,{
+            expiresIn: 24 * 60 * 60
+        })
 
-        // Возвращаем ответ с созданным пользователем (можно не возвращать пароль)
-        res.status(201).json({
-            message: 'Пользователь успешно создан!',
-            user: {
-                id: newUser.id,
-                email: newUser.email,
-                phone: newUser.phone,
-                full_name: newUser.full_name,
-                username: newUser.username,
-                bio: newUser.bio,
-                profile_picture: newUser.profile_picture,
-            }
-        });
+        res.status(200).send({token});
     } catch (error) {
         console.error('Ошибка при создании пользователя:', error);
 
@@ -51,17 +54,35 @@ const signUp = async (req, res) => {
         // Возвращаем общую ошибку
         res.status(500).json({ error: 'Ошибка сервера при создании пользователя.' });
     }
-    
-    
-    
-    console.log(req.body)
+}
 
-    // User.create({
-        
-    // })
-    // res.status(200).end()
+const signIn = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        // Ищем пользователя по email
+        const user = await User.findOne({ where: { email } });
+
+        if (!user) {
+            return res.status(404).json({ error: 'Пользователь не найден' });
+        }
+
+        // Сравниваем введенный пароль с хэшированным паролем в базе
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+
+        if (!isPasswordValid) {
+            return res.status(401).json({ error: 'Неверный пароль' });
+        }
+
+        // Если все верно, можно вернуть ответ с токеном или другим подтверждением
+        res.status(200).json({ message: 'Авторизация успешна', user });
+    } catch (error) {
+        console.error('Ошибка при авторизации:', error);
+        res.status(500).json({ error: 'Ошибка сервера при авторизации' });
+    }
 }
 
 module.exports = {
-    signUp
+    signUp,
+    signIn
 }
