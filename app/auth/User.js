@@ -39,4 +39,17 @@ const User = sequelize.define('User', {
     timestamps: false, // Отключаем поля createdAt и updatedAt
 })
 
+User.belongsToMany(User, { 
+    through: 'Subscriptions',
+    as: 'followers',
+    foreignKey: 'following_id',
+    otherKey: 'follower_id',
+});
+User.belongsToMany(User, { 
+    through: 'Subscriptions',
+    as: 'following',
+    foreignKey: 'follower_id',
+    otherKey: 'following_id',
+});
+
 module.exports = User

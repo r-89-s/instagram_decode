@@ -2,20 +2,18 @@
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
+    // Создаем таблицу Users
     await queryInterface.createTable('Users', {
       id: {
-        allowNull: false,
-        autoIncrement: true,
-        primaryKey: true,
         type: Sequelize.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
+        allowNull: false,
       },
       email: {
         type: Sequelize.STRING,
         allowNull: false,
         unique: true,
-        validate: {
-          isEmail: true,
-        },
       },
       password: {
         type: Sequelize.STRING,
@@ -43,9 +41,37 @@ module.exports = {
         allowNull: true,
       },
     });
+
+    // Создаем промежуточную таблицу для подписок
+    await queryInterface.createTable('Subscriptions', {
+      follower_id: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: 'Users', // Ссылаемся на таблицу Users
+          key: 'id',
+        },
+        onDelete: 'CASCADE', // Удаление подписок при удалении пользователя
+      },
+      following_id: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: 'Users',
+          key: 'id',
+        },
+        onDelete: 'CASCADE',
+      },
+      created_at: {
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW,
+      },
+    });
   },
 
   down: async (queryInterface, Sequelize) => {
+    // Удаляем таблицы при откате
+    await queryInterface.dropTable('Subscriptions');
     await queryInterface.dropTable('Users');
   },
 };

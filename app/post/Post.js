@@ -19,8 +19,4 @@ const Post = sequelize.define('Post', {
 // Один пользователь может иметь много постов
 Post.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
-// В будущем можно будет определить ассоциации с лайками и комментариями:
-// Post.hasMany(Like, { foreignKey: 'postId', as: 'likes' });
-// Post.hasMany(Comment, { foreignKey: 'postId', as: 'comments' });
-
 module.exports = Post;
